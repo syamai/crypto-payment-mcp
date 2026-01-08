@@ -13,6 +13,7 @@ A [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server for cry
 - 🔗 **Multi-Network Support** - Bitcoin, Ethereum, BSC, Solana, Tron, XRP
 - ✅ **Address Validation** - Validate wallet addresses for each network
 - 🔄 **Currency Conversion** - Convert between crypto and USD
+- 🔑 **Flexible Authentication** - Backend API or direct platform access
 
 ## Supported Networks
 
@@ -52,19 +53,51 @@ npx @syamai/crypto-payment-mcp
 
 ### Environment Variables
 
-Create a `.env` file or set environment variables:
+Create a `.env` file in the project root:
 
 ```bash
-# Your payment API backend URL
+cp .env.example .env
+```
+
+#### Basic Configuration (Backend API Mode)
+
+```bash
+# Casino Backend API URL
 API_BASE_URL=http://localhost:3001/v2
 
-# API timeout in milliseconds (optional, default: 30000)
+# API Timeout in milliseconds
 API_TIMEOUT=30000
 ```
 
+#### Advanced Configuration (Direct Platform Access)
+
+For direct integration with payment platform (bypassing backend):
+
+```bash
+# Operator credentials
+OPERATOR_ID=your-operator-id
+OPERATOR_SECRET=your-operator-secret
+
+# Payment platform URLs
+PAYMENT_PLATFORM_API_URL=https://payment-platform.example.com/api
+PAYMENT_PLATFORM_DOMAIN_URL=https://payment.example.com
+
+# Webhook signature verification (RSA public key)
+OPERATOR_PUBLIC_KEY=-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...
+-----END PUBLIC KEY-----
+```
+
+### Configuration Priority
+
+| Configuration | Behavior |
+|---------------|----------|
+| `API_BASE_URL` only | Uses backend API (casino-tele-backend) for payment operations |
+| `OPERATOR_*` variables set | Enables direct platform API access (bypasses backend) |
+
 ## Usage with Claude Code
 
-### Method 1: Add to Claude Code settings
+### Method 1: Global Settings
 
 Add to your `~/.claude/settings.json`:
 
@@ -73,7 +106,7 @@ Add to your `~/.claude/settings.json`:
   "mcpServers": {
     "crypto-payment": {
       "command": "npx",
-      "args": ["@anthropic/crypto-payment-mcp"],
+      "args": ["@syamai/crypto-payment-mcp"],
       "env": {
         "API_BASE_URL": "https://your-api-server.com/v2"
       }
@@ -82,7 +115,7 @@ Add to your `~/.claude/settings.json`:
 }
 ```
 
-### Method 2: Project-level configuration
+### Method 2: Project-level Configuration
 
 Create `.mcp.json` in your project root:
 
@@ -91,16 +124,19 @@ Create `.mcp.json` in your project root:
   "mcpServers": {
     "crypto-payment": {
       "command": "npx",
-      "args": ["@anthropic/crypto-payment-mcp"],
+      "args": ["@syamai/crypto-payment-mcp"],
       "env": {
-        "API_BASE_URL": "https://your-api-server.com/v2"
+        "API_BASE_URL": "https://your-api-server.com/v2",
+        "OPERATOR_ID": "your-operator-id",
+        "OPERATOR_SECRET": "your-operator-secret",
+        "PAYMENT_PLATFORM_API_URL": "https://platform-api.example.com"
       }
     }
   }
 }
 ```
 
-### Method 3: Local development
+### Method 3: Local Development
 
 If you cloned the repository:
 
@@ -122,35 +158,35 @@ If you cloned the repository:
 
 ### Payment Tools
 
-| Tool | Description |
-|------|-------------|
-| `crypto_request_payment` | Create a new payment request and get payment URL |
-| `crypto_get_payment_status` | Check the status of a specific payment |
-| `crypto_get_user_balance` | Get user's current USD balance |
-| `crypto_get_payment_history` | List payment history with pagination |
+| Tool | Description | Auth Required |
+|------|-------------|---------------|
+| `crypto_request_payment` | Create a new payment request and get payment URL | Yes |
+| `crypto_get_payment_status` | Check the status of a specific payment | Yes |
+| `crypto_get_user_balance` | Get user's current USD balance | Yes |
+| `crypto_get_payment_history` | List payment history with pagination | Yes |
 
 ### Network & Token Tools
 
-| Tool | Description |
-|------|-------------|
-| `crypto_list_networks` | List supported blockchain networks |
-| `crypto_list_tokens` | List supported tokens for a network |
-| `crypto_get_token_info` | Get detailed token information |
+| Tool | Description | Auth Required |
+|------|-------------|---------------|
+| `crypto_list_networks` | List supported blockchain networks | No |
+| `crypto_list_tokens` | List supported tokens for a network | No |
+| `crypto_get_token_info` | Get detailed token information with price | No |
 
 ### Price Tools
 
-| Tool | Description |
-|------|-------------|
-| `crypto_get_token_price` | Get current USD price for a token |
-| `crypto_get_multiple_prices` | Get prices for multiple tokens at once |
-| `crypto_convert_amount` | Convert between token and USD amounts |
+| Tool | Description | Auth Required |
+|------|-------------|---------------|
+| `crypto_get_token_price` | Get current USD price for a token | No |
+| `crypto_get_multiple_prices` | Get prices for multiple tokens at once | No |
+| `crypto_convert_amount` | Convert between token and USD amounts | No |
 
 ### Utility Tools
 
-| Tool | Description |
-|------|-------------|
-| `crypto_validate_address` | Validate a wallet address format |
-| `crypto_health_check` | Check API server connectivity |
+| Tool | Description | Auth Required |
+|------|-------------|---------------|
+| `crypto_validate_address` | Validate a wallet address format | No |
+| `crypto_health_check` | Check API server connectivity | No |
 
 ## Tool Examples
 
@@ -188,8 +224,8 @@ Response:
 ```json
 {
   "symbol": "BTC",
-  "price": 43250.50,
-  "priceUsd": 43250.50,
+  "price": 94703.99,
+  "priceUsd": 94703.99,
   "timestamp": 1704672000000
 }
 ```
@@ -213,11 +249,71 @@ Response:
       "id": "bsc_test",
       "name": "Binance Smart Chain Testnet",
       "symbol": "BNB",
+      "icon": "https://s2.coinmarketcap.com/static/img/coins/64x64/1839.png",
       "canDeposit": true,
       "canWithdraw": true
     }
   ],
   "count": 6
+}
+```
+
+### List Tokens for Network
+
+```json
+{
+  "tool": "crypto_list_tokens",
+  "arguments": {
+    "network": "bsc_test",
+    "type": "deposit"
+  }
+}
+```
+
+Response:
+```json
+{
+  "network": "bsc_test",
+  "tokens": [
+    {
+      "symbol": "BNB",
+      "name": "Binance Coin",
+      "decimals": 18,
+      "icon": "https://s2.coinmarketcap.com/static/img/coins/64x64/1839.png",
+      "canDeposit": true,
+      "canWithdraw": true
+    },
+    {
+      "symbol": "USDT",
+      "name": "Tether USD",
+      "decimals": 6,
+      "canDeposit": true,
+      "canWithdraw": true
+    }
+  ],
+  "count": 6
+}
+```
+
+### Convert Amount
+
+```json
+{
+  "tool": "crypto_convert_amount",
+  "arguments": {
+    "symbol": "ETH",
+    "amount": 1.5,
+    "direction": "toUsd"
+  }
+}
+```
+
+Response:
+```json
+{
+  "from": { "symbol": "ETH", "amount": 1.5 },
+  "to": { "symbol": "USD", "amount": 4725.50 },
+  "direction": "toUsd"
 }
 ```
 
@@ -240,6 +336,31 @@ Response:
   "network": "eth",
   "valid": true,
   "reason": "Address format is valid"
+}
+```
+
+### Get Multiple Prices
+
+```json
+{
+  "tool": "crypto_get_multiple_prices",
+  "arguments": {
+    "symbols": ["BTC", "ETH", "BNB", "SOL"]
+  }
+}
+```
+
+Response:
+```json
+{
+  "prices": [
+    { "symbol": "BTC", "price": 94703.99, "priceUsd": 94703.99 },
+    { "symbol": "ETH", "price": 3150.25, "priceUsd": 3150.25 },
+    { "symbol": "BNB", "price": 612.80, "priceUsd": 612.80 },
+    { "symbol": "SOL", "price": 185.42, "priceUsd": 185.42 }
+  ],
+  "count": 4,
+  "timestamp": 1704672000000
 }
 ```
 
@@ -268,41 +389,63 @@ npm run build
 ### Test Locally
 
 ```bash
-npm start
+# Test tools list
+echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | node dist/index.js
+
+# Test specific tool
+echo '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"crypto_list_networks","arguments":{"type":"deposit"}}}' | node dist/index.js
 ```
 
 ## Architecture
 
 ```
 src/
-├── index.ts              # MCP server entry point
+├── index.ts                    # MCP server entry point
 ├── config/
-│   └── blockchain.ts     # Network and token configurations
+│   └── blockchain.ts           # Network and token configurations
 ├── services/
-│   ├── payment.service.ts  # Payment API client
-│   └── price.service.ts    # Price fetching service
+│   ├── payment.service.ts      # Backend API client
+│   ├── platform.service.ts     # Direct platform API client
+│   └── price.service.ts        # Binance price fetching
 └── tools/
-    ├── definitions.ts    # Tool schema definitions
-    └── handlers.ts       # Tool execution handlers
+    ├── definitions.ts          # Tool schema definitions (12 tools)
+    └── handlers.ts             # Tool execution handlers
 ```
 
 ## Security Notes
 
-- **Auth tokens** are passed per-request and never stored
-- Tokens are cleared immediately after API calls
+- **Auth tokens** are passed per-request and never stored permanently
+- Tokens are cleared immediately after API calls complete
 - Use environment variables for sensitive configuration
 - Never commit `.env` files to version control
+- `OPERATOR_SECRET` is hashed with SHA-512 before transmission
+- Webhook signatures use RSA-SHA512 for verification
 
 ## API Backend Requirements
 
 This MCP server is designed to work with a payment API backend that provides:
 
-- `GET /payment/payment-id` - Create payment request
-- `GET /payment/status/:paymentId` - Get payment status
-- `GET /payment/user/balance` - Get user balance
-- `GET /payment/authenticate` - Authenticate user
-- `GET /cashier/history` - Get payment history
-- `GET /health` - Health check
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/payment/payment-id` | GET | Create payment request |
+| `/payment/status/:paymentId` | GET | Get payment status |
+| `/payment/user/balance` | GET | Get user balance |
+| `/payment/authenticate` | GET | Authenticate user |
+| `/cashier/history` | GET | Get payment history |
+| `/health` | GET | Health check |
+
+## Webhook Events (for direct platform integration)
+
+| Event | Description |
+|-------|-------------|
+| `DEPOSIT_PROCESSING` | Deposit detected on blockchain |
+| `DEPOSIT_COMPLETED` | Deposit confirmed and credited |
+| `WITHDRAW_REQUESTED` | Withdrawal request created |
+| `WITHDRAW_APPROVED` | Withdrawal approved by admin |
+| `WITHDRAW_PROCESSING` | Withdrawal being processed |
+| `WITHDRAW_COMPLETED` | Withdrawal sent on blockchain |
+| `WITHDRAW_REJECTED` | Withdrawal rejected |
+| `WITHDRAW_FAILED` | Withdrawal failed |
 
 ## Contributing
 
@@ -323,3 +466,14 @@ MIT License - see the [LICENSE](LICENSE) file for details.
 - [Model Context Protocol](https://modelcontextprotocol.io) - MCP specification
 - [Claude Code](https://claude.ai/code) - AI coding assistant
 - [MCP SDK](https://github.com/modelcontextprotocol/sdk) - Official MCP SDK
+- [Binance API](https://binance-docs.github.io/apidocs/) - Price data source
+
+## Changelog
+
+### v1.0.0
+- Initial release
+- 12 MCP tools for crypto payment operations
+- Support for 6 blockchain networks
+- Real-time price feeds from Binance
+- Address validation for all supported networks
+- Optional direct platform API integration

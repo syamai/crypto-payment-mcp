@@ -60,6 +60,50 @@
 
 ---
 
+### 3. [2026-01-08 15:36] README.md 업데이트 - GitHub URL 및 패키지명 변경
+
+**파일:** `2026-01-08_15-36-03_readme-update-github-urls.md`
+
+**완료 항목:**
+- ✅ GitHub 리포지토리 URL 업데이트
+  - `https://github.com/anthropics/crypto-payment-mcp.git` → `https://github.com/ahnsungbin/crypto-payment-mcp.git`
+  - 2곳 업데이트 (Clone 및 Development Setup)
+
+- ✅ NPX 패키지명 업데이트
+  - `npx @anthropic/crypto-payment-mcp` → `npx @ahnsungbin/crypto-payment-mcp`
+  - 3곳 업데이트 (Option 3, 설정 예시)
+
+- ✅ MCP 설정 일관성 유지
+  - 모든 설정 예시에서 패키지명 통일
+
+**상태:** ✅ 완료
+
+---
+
+### 4. [2026-01-08 08:46] GitHub 계정 마이그레이션 - package.json & README.md URL 업데이트
+
+**파일:** `2026-01-08_08-46-26_package-and-readme-url-migration.md`
+
+**완료 항목:**
+- ✅ package.json 업데이트 (4개 필드)
+  - `name`: `@ahnsungbin/crypto-payment-mcp` → `@syamai/crypto-payment-mcp`
+  - `repository.url`: GitHub URL 변경 (ahnsungbin → syamai)
+  - `bugs.url`: 이슈 추적 URL 변경
+  - `homepage`: 프로젝트 홈페이지 URL 변경
+
+- ✅ README.md 업데이트 (4개 항목)
+  - NPM 배지 URL 업데이트
+  - 설치 명령어 (`npm install -g @syamai/crypto-payment-mcp`)
+  - Git clone URL 변경
+  - npx 명령어 업데이트
+
+- ✅ 모든 GitHub 참조 일관성 유지
+  - ahnsungbin → syamai (8개 참조 모두 변경)
+
+**상태:** ✅ 완료
+
+---
+
 ## 프로젝트 구조
 
 ```
@@ -172,4 +216,4 @@ pnpm start
 
 ---
 
-**최종 업데이트:** 2026-01-08 15:20:22
+**최종 업데이트:** 2026-01-08 08:46:26

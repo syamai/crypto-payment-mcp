@@ -17,6 +17,7 @@ import dotenv from 'dotenv';
 import { tools, ToolName } from './tools/definitions.js';
 import { executeTool } from './tools/handlers.js';
 import { initPaymentService } from './services/payment.service.js';
+import { initPlatformService } from './services/platform.service.js';
 
 // Load environment variables
 dotenv.config();
@@ -25,11 +26,31 @@ dotenv.config();
 const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3001/v2';
 const API_TIMEOUT = parseInt(process.env.API_TIMEOUT || '30000', 10);
 
+// Platform API Configuration (optional - for direct platform access)
+const OPERATOR_ID = process.env.OPERATOR_ID || '';
+const OPERATOR_SECRET = process.env.OPERATOR_SECRET || '';
+const PAYMENT_PLATFORM_API_URL = process.env.PAYMENT_PLATFORM_API_URL || '';
+const PAYMENT_PLATFORM_DOMAIN_URL = process.env.PAYMENT_PLATFORM_DOMAIN_URL || '';
+const OPERATOR_PUBLIC_KEY = process.env.OPERATOR_PUBLIC_KEY || '';
+
 // Initialize services
 initPaymentService({
   baseUrl: API_BASE_URL,
   timeout: API_TIMEOUT,
 });
+
+// Initialize platform service if credentials are provided
+if (OPERATOR_ID && OPERATOR_SECRET && PAYMENT_PLATFORM_API_URL) {
+  initPlatformService({
+    operatorId: OPERATOR_ID,
+    operatorSecret: OPERATOR_SECRET,
+    platformApiUrl: PAYMENT_PLATFORM_API_URL,
+    platformDomainUrl: PAYMENT_PLATFORM_DOMAIN_URL,
+    operatorPublicKey: OPERATOR_PUBLIC_KEY,
+    timeout: API_TIMEOUT,
+  });
+  console.error('Platform service initialized with direct API access');
+}
 
 // Create MCP server
 const server = new Server(
